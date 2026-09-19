@@ -28,8 +28,14 @@
 | 破碎的像素地牢 | 下屏地图与移动，上屏状态、日志、装备详情；背包操作仍留在下屏 | 开放源码，移动/桌面平台，Java/libGDX；桌面打包仍需适配 ARM64 [S6] | 中；适合源码重构研究，不是现成包即用 |
 | Dungeon Crawl Stone Soup | 下屏地图/动作，上屏状态、日志与当前目标详情 | ARM64 PortMaster；开放源码，SDL tiles，GPLv2+ [S7] | 初始拆面板中，完整交互高；指令种类多 |
 | 骰子地下城 | 上屏敌人与回合信息，下屏骰子和装备槽 | PortMaster 脚本实际调用 Box64 与 Westonpack [S8] | 高；布局很合适，但本轮不列为省力首选 |
+| 星露谷物语 | 上屏时间/天气/任务/状态，下屏世界、农场、地图与当前操作 | 已有旧版 ARM64 PortMaster；另有主线版 ARM64/.NET 6/MonoGame 社区构建路线 [S10][S11] | 中高；值得排在杀戮尖塔之后 |
+| 暗黑破坏神 2 | 上屏实时战斗世界，下屏技能/药水/装备/角色面板 | OpenDiablo2 是 Go 跨平台引擎方向；已有 DevilutionX 是 Diablo 1/Hellfire，不是 D2 [S12][S13][S14] | 很高；研究价值高，短期不适合 |
+| 潜水员戴夫 | 上屏水下/餐厅主场景，下屏装备、地图、背包和操作 | 本次未找到可复用的 PortMaster 或 Linux ARM64 原生运行基础；商业闭源运行时 | 极高；暂不建议立项 |
 
 如果优先“玩家收益”，先试《杀戮尖塔》。
+星露谷物语是第二优先级：已有可运行基础，玩法节奏和双屏信息/操作分工也合适，
+但它比杀戮尖塔有更多连续世界、地图、背包、商店、对话、钓鱼和小游戏界面，
+因此不是简单的 HUD 搬移。
 如果优先“有源码、渲染和输入可改”，重点比较像素地牢与 OpenXcom；
 但前者仍要打通 ARM64 桌面运行时，后者旧 SDL 显示链路和全量界面较重。
 没有一个候选可以仅凭现有 Balatro 双屏模块实现低成本自动转换。
@@ -169,6 +175,77 @@ P2 通过前不要投入大量美术与全部菜单重排。
 
 ## 6. 其他候选的取舍
 
+### 6.1 星露谷物语
+
+当前有两条完全不同的路线，必须先选定版本：
+
+1. **现有 compatibility 版 PortMaster**：上游元数据标为 `aarch64`，
+   使用 `mono-6.12.0.122-aarch64.squashfs`，用户把 Steam/GOG compatibility
+   版本完整数据复制到 `gamedata`；启动脚本通过 MonoGame patch、GL4ES 和 `SVLoader`
+   进入游戏。[S10]
+2. **主线版 ARM64 社区构建**：`portmaster-stardew-valley-mainline` 面向普通
+   Steam mainline，目标 `net6.0`，携带 .NET 6 ARM64 runtime，并维护 PortMaster
+   专用 MonoGame 分支；仓库明确标为 experimental，SMAPI/Mod 兼容需要单独验证。[S11]
+
+第二条路线更接近当前正版主线，但运行时体积和内存压力更值得先测。
+第一条路线已有 PortMaster 形态，适合先做单屏启动和输入基线；不能把 compatibility
+版存档、SMAPI 或 DLL 直接假定兼容主线版。
+
+推荐布局：
+
+| 上屏 | 下屏 |
+| --- | --- |
+| 时间、天气、季节、任务、金钱、体力/生命和当前工具摘要 | 农场/矿洞/城镇主世界、移动与交互 |
+| 小地图或当前区域摘要 | 地图、背包、箱子、商店、对话选项 |
+| 钓鱼/小游戏状态提示 | 主要操作按钮与可触摸区域 |
+
+不要把世界画面拆成上下两张各自滚动的半地图；保持一个 camera/world，
+下屏显示主世界，上屏显示状态和辅助 UI。库存、商店、对话和地图可以在下屏
+切换为完整逻辑视图，上屏保留最少的上下文状态。钓鱼、战斗和小游戏先作为独立
+场景验证，因为它们对连续输入和快速反馈更敏感。
+
+工程切入点不是复用 Balatro 的 Lua，而是检查 MonoGame 的 Game/GraphicsDevice、
+SpriteBatch、Viewport、RenderTarget 和 InputState 入口。若需要主线版，优先在
+MonoGame patch 层提供两个 screen-local viewport 与统一坐标转换；不要从最终
+2048x768 截图反裁后再猜命中区域。SMAPI 支持先不纳入第一版验收。
+
+### 6.2 暗黑破坏神 2
+
+要先厘清名称：
+
+- **DevilutionX 是 Diablo 1 / Hellfire 的源代码移植**，PortMaster 已有
+  `devilutionx` ARM64 包，但它不能运行 Diablo 2 内容。[S12][S13]
+- **OpenDiablo2** 是 Go 编写的跨平台 Diablo 2 引擎方向，仓库说明需要用户自备
+  Diablo 2 与 Lord of Destruction 资源；项目 README 还说明引擎/工具正在拆分到
+  Abyss Engine。[S14]
+
+所以“已有 DevilutionX -> 直接做暗黑 2 双屏版”这条路线不成立。真正可行的是：
+先将 OpenDiablo2/Abyss Engine 编译并稳定运行在 RGDSplus，再做显示拆分。
+这会同时承担引擎成熟度、资源格式、音频、输入、渲染和内存验证，远高于
+《杀戮尖塔》或星露谷物语的现成运行时适配。
+
+双屏布局本身可以设计成：
+
+- 上屏：实时等距战斗世界、敌人、角色与掉落反馈。
+- 下屏：技能栏、药水、装备/角色/任务面板和触摸操作。
+
+但暗黑 2 是实时动作游戏，不能把所有点击目标都丢到上屏再要求用户跨屏触摸。
+需要下屏提供技能快捷栏、药水和目标/交互确认，或者提供可切换的虚拟光标。
+这使输入适配比回合制卡牌游戏困难。若未来做，第一阶段只验证原生键鼠/手柄
+和静态双 viewport，不先做完整触摸战斗。
+
+### 6.3 潜水员戴夫
+
+本次检索没有找到可直接复用的 PortMaster 包、Linux ARM64 原生运行时或公开
+可维护的开源引擎移植。即使 PC 版本可以通过 x86 转译层启动，也不等于适合
+RGDSplus：设备只有约 1 GB 内存且无 Swap，游戏包含水下实时动作、餐厅经营、
+地图、对话和多个小游戏场景，图形与输入路径会不断切换。
+
+理论上的双屏分工很有吸引力：上屏显示水下/餐厅主场景，下屏显示装备、地图、
+背包、菜单和交互。但这需要先解决商业闭源运行时、CPU/图形兼容、资源占用、
+多个场景的输入命中与可能的 x86/Proton 依赖。没有现成 ARM64 基础时，
+这些工作远超过 UI 拆分本身，当前不建议投入。
+
 OpenXcom Extended 的优势是原生 ARM64 移植和可修改引擎源码。
 难点是已有旧 SDL 路径、多种分辨率布局、大量精细战场交互。
 PortMaster 目录名为 `openxcom`，实际发布对象是 **OpenXcom Extended**，
@@ -212,3 +289,8 @@ PortMaster 元数据与脚本是移植维护者的直接资料，不是 RGDSplus
 - [S7] DCSS 元数据：`https://raw.githubusercontent.com/PortsMaster/PortMaster-New/main/ports/dungeoncrawlstonesoup/port.json`；官方 README：`https://raw.githubusercontent.com/crawl/crawl/master/README.md`
 - [S8] 骰子地下城启动脚本：`https://raw.githubusercontent.com/PortsMaster/PortMaster-New/main/ports/diceydungeons/Dicey%20Dungeons.sh`
 - [S9] ModTheSpire：`https://raw.githubusercontent.com/kiooeht/ModTheSpire/master/README.md`；BaseMod：`https://raw.githubusercontent.com/daviscook477/BaseMod/master/README.md`
+- [S10] PortMaster 星露谷物语元数据：`https://raw.githubusercontent.com/PortsMaster/PortMaster-New/main/ports/stardewvalley/port.json`；README：`https://raw.githubusercontent.com/PortsMaster/PortMaster-New/main/ports/stardewvalley/README.md`；启动脚本：`https://raw.githubusercontent.com/PortsMaster/PortMaster-New/main/ports/stardewvalley/StardewValley.sh`
+- [S11] Stardew Valley 主线 ARM64 PortMaster 构建：`https://github.com/Producdevity/portmaster-stardew-valley-mainline`；其 MonoGame 分支：`https://github.com/Producdevity/MonoGame/tree/portmaster-stardew-mainline`
+- [S12] PortMaster DevilutionX 元数据：`https://raw.githubusercontent.com/PortsMaster/PortMaster-New/main/ports/devilutionx/port.json`
+- [S13] DevilutionX 官方 README：`https://github.com/diasurgical/devilutionX`
+- [S14] OpenDiablo2 官方 README：`https://github.com/OpenDiablo2/OpenDiablo2`

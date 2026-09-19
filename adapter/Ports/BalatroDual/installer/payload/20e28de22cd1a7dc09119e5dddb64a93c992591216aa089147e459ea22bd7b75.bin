@@ -1,0 +1,15 @@
+require "rgds_dual"
+require "portmaster/text_cleanup"
+require "portmaster/loc_fix"
+require "portmaster/achievements"
+require "portmaster/rumble"
+require "portmaster/cpu_opt"
+require "portmaster/particle_cleanup"
+require "portmaster/options"
+require "portmaster/controls"
+require "portmaster/dual_layout"
+require "portmaster/perf"
+					love.handlers[name](a,b,c,d,e,f)
+				love.handlers['mousepressed'](_a,_b,_c,_d or touched)
+
+RGDS.install()

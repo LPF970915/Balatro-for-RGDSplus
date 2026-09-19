@@ -1,0 +1,18 @@
+{
+  "tested_adapter_sha256": "650a6a1c10edfac15295795392415050b808efdf5219e0f577263461371adfff",
+  "recipe_id": "295a775d7b96304cbf9ee74a35066eca909e320224e859cb597dd0e5cf9661da",
+  "game_files_reconstructed": 311,
+  "unchanged_files_from_user_game": 281,
+  "delta_targets": 13,
+  "compatibility_addon_targets": 17,
+  "game_patches_and_runtime_unchanged": true,
+  "excluded": [
+    "game EXE",
+    "complete patched game",
+    "game artwork and audio",
+    "player saves",
+    "generated cache",
+    "device logs",
+    "device credentials"
+  ]
+}

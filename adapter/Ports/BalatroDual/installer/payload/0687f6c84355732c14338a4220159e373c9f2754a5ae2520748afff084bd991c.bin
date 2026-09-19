@@ -1,0 +1,101 @@
+-- Only the procedural background uses half-resolution buffers.
+local B = {}
+local W, H = 1024, 768
+local BW, BH = W/2, H/2
+local canvas
+local animate = os.getenv("BALATRO_DUAL_BACKGROUND_MOTION") ~= "0"
+local profiles = {
+    splash = {
+        {motion=1, detail=1, offset={0,0}},
+        {motion=1, detail=1, offset={0,0}},
+    },
+    background = {
+        {motion=1, detail=1, offset={0,0}},
+        {motion=1, detail=1, offset={0,0}},
+    },
+}
+
+function B.release()
+    if canvas then canvas:release(); canvas=nil end
+end
+
+function B.draw(object)
+    if RGDS.background_skip then return end
+    local step = object.draw_steps and object.draw_steps[1]
+    local profile = step and profiles[step.shader]
+    -- Preserve unexpected original draw steps.
+    if RGDS.background_legacy or not profile or #object.draw_steps ~= 1 or not step.send then
+        RGDS.route(object)
+        object:translate_container()
+        object:draw()
+        return
+    end
+    if not object.states.visible then return end
+    if not canvas then
+        canvas = love.graphics.newCanvas(BW, BH, {readable=true,dpiscale=1,msaa=0})
+        canvas:setFilter("linear","linear")
+    end
+    local shader = G.SHADERS["rgds_"..step.shader]
+    for _, value in ipairs(step.send) do
+        local uniform = value.val or (value.func and value.func()) or
+            value.ref_table[value.ref_value]
+        -- The PortMaster lite preset freezes REAL_SHADER along with UI motion.
+        -- Restore only the explicitly requested background animation.
+        if animate and value.name == "time" and value.ref_table == G.TIMERS and
+           value.ref_value == "REAL_SHADER" then
+            uniform = G.TIMERS.REAL
+        end
+        shader:send(value.name, uniform)
+    end
+    local target = love.graphics.getCanvas()
+    local previous = RGDS.screen
+    RGDS.screen = 0
+    love.graphics.push("all")
+    love.graphics.origin()
+    love.graphics.setScissor()
+    love.graphics.setColor(1,1,1,1)
+    for screen, settings in ipairs(profile) do
+        love.graphics.setCanvas(canvas)
+        love.graphics.clear(0,0,0,0)
+        love.graphics.setBlendMode("alpha","alphamultiply")
+        shader:send("rgds_offset", settings.offset)
+        shader:send("rgds_motion", settings.motion)
+        shader:send("rgds_detail", settings.detail)
+        love.graphics.setShader(shader)
+        love.graphics.rectangle("fill",0,0,BW,BH)
+        love.graphics.setCanvas(target)
+        love.graphics.setShader()
+        love.graphics.setBlendMode("alpha","premultiplied")
+        love.graphics.draw(canvas,(screen-1)*W,0,0,2,2)
+    end
+    love.graphics.pop()
+    RGDS.screen = previous
+end
+
+function B.draw_flash(object)
+    local step = object.draw_steps and object.draw_steps[1]
+    if not step or step.shader ~= "flash" or #object.draw_steps ~= 1 or not step.send then
+        RGDS.route(object)
+        object:translate_container()
+        object:draw()
+        return
+    end
+    if not object.states.visible then return end
+    local shader = G.SHADERS.flash
+    -- Resolve the original clock/strength once for both screen-local flashes.
+    for _, value in ipairs(step.send) do
+        shader:send(value.name, value.val or (value.func and value.func()) or
+            value.ref_table[value.ref_value])
+    end
+    love.graphics.push("all")
+    love.graphics.origin()
+    love.graphics.setScissor()
+    love.graphics.setColor(1,1,1,1)
+    love.graphics.setBlendMode("alpha","alphamultiply")
+    love.graphics.setShader(shader)
+    -- The stock flash shader is procedural; no sprite or logo is duplicated.
+    love.graphics.rectangle("fill",0,0,W*2,H)
+    love.graphics.pop()
+end
+
+return B

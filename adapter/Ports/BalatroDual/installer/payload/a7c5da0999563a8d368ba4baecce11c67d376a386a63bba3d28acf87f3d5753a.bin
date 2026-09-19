@@ -1,0 +1,198 @@
+-- RGDSplus physical Type-B touchscreen, feeding the existing pointer queue.
+local E = {}
+local W,H = 1024,768
+
+function E.decoder(bounds, emit, cancel)
+    local d = {slots={},slot=0,blocked=false,raw_events=0,gestures=0}
+    for slot=0,bounds.slots-1 do d.slots[slot]={id=-1,x=0,y=0} end
+    function d:block()
+        self.owner=nil
+        self.blocked=true
+    end
+    function d:cancel(reason)
+        self:block()
+        cancel(reason)
+    end
+    function d:report()
+        local active=false
+        for _,point in pairs(self.slots) do if point.id>=0 then active=true end end
+        if self.blocked then
+            if not active then self.blocked=false end
+            return
+        end
+        if self.owner then
+            local point=self.slots[self.owner.slot]
+            if not point or point.id~=self.owner.id then
+                local owner=self.owner
+                self.owner=nil
+                self.blocked=active
+                emit("up",owner.x,owner.y)
+                return
+            end
+        else
+            for slot=0,bounds.slots-1 do
+                local point=self.slots[slot]
+                if point.id>=0 then
+                    self.owner={slot=slot,id=point.id}
+                    break
+                end
+            end
+        end
+        if not self.owner then return end
+        local point=self.slots[self.owner.slot]
+        local x=math.max(0,math.min(W-1,(point.x-bounds.xmin)*(W-1)/(bounds.xmax-bounds.xmin)))
+        local y=math.max(0,math.min(H-1,(point.y-bounds.ymin)*(H-1)/(bounds.ymax-bounds.ymin)))
+        local kind=not self.owner.x and "down" or "move"
+        if kind=="down" or x~=self.owner.x or y~=self.owner.y then
+            self.owner.x,self.owner.y=x,y
+            if kind=="down" then
+                self.gestures=self.gestures+1
+                if self.gestures<=4 then
+                    print("[evdev]","touch-map",point.x,point.y,"lower",x,y)
+                end
+            end
+            emit(kind,x,y)
+        end
+    end
+    function d:feed(kind,code,value)
+        self.raw_events=self.raw_events+1
+        if kind==0 and code==3 then
+            self.dropped=true
+            self:cancel("evdev-syn-dropped")
+        elseif kind==0 and code==0 then
+            if self.dropped then self.dropped=false; return "resync" end
+            self:report()
+        elseif not self.dropped and kind==3 then
+            if code==47 then
+                self.slot=value
+            else
+                local point=self.slots[self.slot]
+                if not point then return end
+                if code==57 then point.id=value
+                elseif code==53 then point.x=value
+                elseif code==54 then point.y=value end
+            end
+        end
+    end
+    return d
+end
+
+function E.open(emit,cancel)
+    if os.getenv("BALATRO_DUAL_EVDEV_TOUCH")=="0" or
+       not love.system or love.system.getOS()~="Linux" then return end
+    local ok,ffi=pcall(require,"ffi")
+    if not ok then print("[evdev]","unavailable","ffi"); return end
+    ffi.cdef[[
+        struct rgds_touch_event { long sec; long usec; unsigned short type; unsigned short code; int value; };
+        int open(const char *path, int flags, ...);
+        long read(int fd, void *buf, unsigned long count);
+        int close(int fd);
+        int ioctl(int fd, unsigned long request, ...);
+    ]]
+    local path
+    for index=0,31 do
+        local file=io.open("/sys/class/input/event"..index.."/device/name","r")
+        if file then
+            local name=file:read("*l")
+            file:close()
+            if name=="gt9xx-0" then path="/dev/input/event"..index; break end
+        end
+    end
+    if not path then print("[evdev]","unavailable","gt9xx-0"); return end
+    local fd=ffi.C.open(path,0x800)
+    if fd<0 then print("[evdev]","open-failed",path,ffi.errno()); return end
+    local function abs(axis)
+        local info=ffi.new("int[6]")
+        if ffi.C.ioctl(fd,0x80184540+axis,info)~=0 then return end
+        return tonumber(info[1]),tonumber(info[2])
+    end
+    local xmin,xmax=abs(53)
+    local ymin,ymax=abs(54)
+    local smin,smax=abs(47)
+    if not xmin or not ymin or smin~=0 or not smax or smax>31 or
+       xmax<=xmin or ymax<=ymin then
+        ffi.C.close(fd)
+        print("[evdev]","unsupported-axes",path)
+        return
+    end
+    local d=E.decoder({xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,slots=smax+1},emit,cancel)
+    local events=ffi.new("struct rgds_touch_event[64]")
+    local event_size=ffi.sizeof("struct rgds_touch_event")
+    local grab_request=0x40044590
+    local function grab(value)
+        return ffi.C.ioctl(fd,grab_request,ffi.cast("int",value))==0
+    end
+    function d:resync()
+        self:block()
+        for _,axis in ipairs({57,53,54}) do
+            local values=ffi.new("int[?]",smax+2)
+            values[0]=axis
+            local request=0x8000450a+4*(smax+2)*65536
+            if ffi.C.ioctl(fd,request,values)~=0 then return false end
+            for slot=0,smax do
+                local field=axis==57 and "id" or axis==53 and "x" or "y"
+                self.slots[slot][field]=tonumber(values[slot+1])
+            end
+        end
+        local info=ffi.new("int[6]")
+        if ffi.C.ioctl(fd,0x80184540+47,info)~=0 then return false end
+        self.slot=tonumber(info[0])
+        self:report()
+        return true
+    end
+    function d:close()
+        if self.closed then return end
+        self:cancel("evdev-close")
+        if self.grabbed then grab(0) end
+        ffi.C.close(fd)
+        self.grabbed,self.closed=false,true
+    end
+    function d:poll(focused)
+        if self.closed then return false end
+        if not focused then
+            if self.grabbed then
+                self:cancel("evdev-focus-lost")
+                grab(0)
+                self.grabbed=false
+            end
+            return true
+        end
+        if not self.grabbed then
+            if not grab(1) then
+                print("[evdev]","grab-failed",path,ffi.errno())
+                self:close()
+                return false
+            end
+            self.grabbed=true
+            -- Discard stale queued events before taking a kernel state snapshot.
+            for _=1,32 do
+                if ffi.C.read(fd,events,ffi.sizeof(events))<=0 then break end
+            end
+            if not self:resync() then self:close(); return false end
+            print("[evdev]","active",path,"slots",smax+1)
+        end
+        for _=1,4 do
+            local bytes=tonumber(ffi.C.read(fd,events,ffi.sizeof(events)))
+            if bytes<0 then
+                local err=ffi.errno()
+                if err==11 or err==4 then return true end
+                print("[evdev]","read-failed",path,err)
+                self:close()
+                return false
+            end
+            if bytes==0 then self:close(); return false end
+            if bytes%event_size~=0 then self:close(); return false end
+            for index=0,bytes/event_size-1 do
+                local event=events[index]
+                if self:feed(tonumber(event.type),tonumber(event.code),tonumber(event.value))=="resync" then
+                    if not self:resync() then self:close(); return false end
+                end
+            end
+        end
+        return true
+    end
+    print("[evdev]","opened",path,"gt9xx-0","x",xmin,xmax,"y",ymin,ymax)
+    return d
+end
+
+return E

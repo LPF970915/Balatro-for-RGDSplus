@@ -1,0 +1,168 @@
+{
+  "recipe_id": "295a775d7b96304cbf9ee74a35066eca909e320224e859cb597dd0e5cf9661da",
+  "files": [
+    {
+      "path": "cardarea.lua",
+      "source": "cardarea.lua",
+      "payload": "payload/343530a2313c3696157ef262bf066e9ff287b4d292c85b725040129ab3c26537.bin",
+      "payload_sha256": "343530a2313c3696157ef262bf066e9ff287b4d292c85b725040129ab3c26537"
+    },
+    {
+      "path": "conf.lua",
+      "source": "conf.lua",
+      "payload": "payload/56f7835e649662d6f57121b025b86f79572e51b2ca3993ccbdc8e4283c0aeef8.bin",
+      "payload_sha256": "56f7835e649662d6f57121b025b86f79572e51b2ca3993ccbdc8e4283c0aeef8"
+    },
+    {
+      "path": "engine/text.lua",
+      "source": "engine/text.lua",
+      "payload": "payload/be442126732e5654afcc257f63a19fa8b0e147d40de568b53ea1dea2cfc4b348.bin",
+      "payload_sha256": "be442126732e5654afcc257f63a19fa8b0e147d40de568b53ea1dea2cfc4b348"
+    },
+    {
+      "path": "functions/misc_functions.lua",
+      "source": "functions/misc_functions.lua",
+      "payload": "payload/5a21268c7d504707c8376aa8831de893e146b2120c99d7bc3169396dfe19f82f.bin",
+      "payload_sha256": "5a21268c7d504707c8376aa8831de893e146b2120c99d7bc3169396dfe19f82f"
+    },
+    {
+      "path": "game.lua",
+      "source": "game.lua",
+      "payload": "payload/f7e876cde89304a07853b84d8baa9e3a505241ab9e27b67e42171fb13dbb7e59.bin",
+      "payload_sha256": "f7e876cde89304a07853b84d8baa9e3a505241ab9e27b67e42171fb13dbb7e59"
+    },
+    {
+      "path": "globals.lua",
+      "source": "globals.lua",
+      "payload": "payload/b7a4ee69c61468af1a9b9b04a219cdba89abb461de1c3ea0305ec7bcd1c0a938.bin",
+      "payload_sha256": "b7a4ee69c61468af1a9b9b04a219cdba89abb461de1c3ea0305ec7bcd1c0a938"
+    },
+    {
+      "path": "localization/es_419.lua",
+      "source": "localization/es_419.lua",
+      "payload": "payload/dc52784c0c4527f38694f8a4b8df9ea2571beb625066f3ebce5e9a7de5ba7957.bin",
+      "payload_sha256": "dc52784c0c4527f38694f8a4b8df9ea2571beb625066f3ebce5e9a7de5ba7957"
+    },
+    {
+      "path": "main.lua",
+      "source": "main.lua",
+      "payload": "payload/20e28de22cd1a7dc09119e5dddb64a93c992591216aa089147e459ea22bd7b75.bin",
+      "payload_sha256": "20e28de22cd1a7dc09119e5dddb64a93c992591216aa089147e459ea22bd7b75"
+    },
+    {
+      "path": "portmaster/achievements.lua",
+      "payload": "payload/d93055b45c7ab24bf48bd645e502b97aaaac3294bb4e8784705993c4e7906948.bin",
+      "payload_sha256": "d93055b45c7ab24bf48bd645e502b97aaaac3294bb4e8784705993c4e7906948"
+    },
+    {
+      "path": "portmaster/controls.lua",
+      "payload": "payload/0178e510c3db4d75dc7757945afda9ddb92f5868d635abb78df364bad1aa0ad0.bin",
+      "payload_sha256": "0178e510c3db4d75dc7757945afda9ddb92f5868d635abb78df364bad1aa0ad0"
+    },
+    {
+      "path": "portmaster/cpu_opt.lua",
+      "payload": "payload/e92e4c3374d8018abb3ba2bb4f5979679c7d0f1a3dc91645a7ca7e092def3ba9.bin",
+      "payload_sha256": "e92e4c3374d8018abb3ba2bb4f5979679c7d0f1a3dc91645a7ca7e092def3ba9"
+    },
+    {
+      "path": "portmaster/dual_layout.lua",
+      "payload": "payload/6b35937b35ac9a8e59992b53d9cf6afe131b0ab723120f90fc39841e8d8bd44d.bin",
+      "payload_sha256": "6b35937b35ac9a8e59992b53d9cf6afe131b0ab723120f90fc39841e8d8bd44d"
+    },
+    {
+      "path": "portmaster/loc_fix.lua",
+      "payload": "payload/3147709ac54c1fcf3313883e990bc914059e305a3114af8c8ee3776a6e244265.bin",
+      "payload_sha256": "3147709ac54c1fcf3313883e990bc914059e305a3114af8c8ee3776a6e244265"
+    },
+    {
+      "path": "portmaster/options.lua",
+      "payload": "payload/6e24b7d7e46d3771d7814a0a1a55dc2abff98dac36f6307a5011626820734cab.bin",
+      "payload_sha256": "6e24b7d7e46d3771d7814a0a1a55dc2abff98dac36f6307a5011626820734cab"
+    },
+    {
+      "path": "portmaster/particle_cleanup.lua",
+      "payload": "payload/07b9e7263e01c4eeac8fd9bc57f26e239ee02e50a602d2290580db44c6a0172b.bin",
+      "payload_sha256": "07b9e7263e01c4eeac8fd9bc57f26e239ee02e50a602d2290580db44c6a0172b"
+    },
+    {
+      "path": "portmaster/perf.lua",
+      "payload": "payload/9b1fd777b85b27e6d3414fa4f1abeeea7ac802e897fdaf62d579f7a96bfb602c.bin",
+      "payload_sha256": "9b1fd777b85b27e6d3414fa4f1abeeea7ac802e897fdaf62d579f7a96bfb602c"
+    },
+    {
+      "path": "portmaster/rumble.lua",
+      "payload": "payload/2fb8c42c7223cf5f18a39d5487cb767554784fbce6bf0c77f17d19e998d9eb06.bin",
+      "payload_sha256": "2fb8c42c7223cf5f18a39d5487cb767554784fbce6bf0c77f17d19e998d9eb06"
+    },
+    {
+      "path": "portmaster/small_screen.lua",
+      "payload": "payload/2a3d2a494e50362d3a2c685f45d4497d98fb4c37972577913d9a9c50d3a32bef.bin",
+      "payload_sha256": "2a3d2a494e50362d3a2c685f45d4497d98fb4c37972577913d9a9c50d3a32bef"
+    },
+    {
+      "path": "portmaster/text_cleanup.lua",
+      "payload": "payload/f658c07e56e4e2ecfc5f5fde6fc5af3559abf60a938ab0e03f62fd705c08666d.bin",
+      "payload_sha256": "f658c07e56e4e2ecfc5f5fde6fc5af3559abf60a938ab0e03f62fd705c08666d"
+    },
+    {
+      "path": "resources/shaders/CRT.fs",
+      "source": "resources/shaders/CRT.fs",
+      "payload": "payload/0181769adf2670505610587183791baeeafb68667e4e34a2e8d0c31034f603bd.bin",
+      "payload_sha256": "0181769adf2670505610587183791baeeafb68667e4e34a2e8d0c31034f603bd"
+    },
+    {
+      "path": "resources/shaders/background.fs",
+      "source": "resources/shaders/background.fs",
+      "payload": "payload/eb0ad34f53fccabcdf63af79b7ad681e8f1895dd4383b4411e5f7cc24a0dafe1.bin",
+      "payload_sha256": "eb0ad34f53fccabcdf63af79b7ad681e8f1895dd4383b4411e5f7cc24a0dafe1"
+    },
+    {
+      "path": "resources/shaders/flash.fs",
+      "source": "resources/shaders/flash.fs",
+      "payload": "payload/ed684f5a381c6a5db2b878fdc039d1363ce29d4093a59a0155c388f3b2d4d300.bin",
+      "payload_sha256": "ed684f5a381c6a5db2b878fdc039d1363ce29d4093a59a0155c388f3b2d4d300"
+    },
+    {
+      "path": "resources/shaders/rgds_background.fs",
+      "source": "resources/shaders/background.fs",
+      "payload": "payload/86176f3849e6a5e688ae02ba374d2225e3c14ab3b6e3bc464db9bd372c2ca34d.bin",
+      "payload_sha256": "86176f3849e6a5e688ae02ba374d2225e3c14ab3b6e3bc464db9bd372c2ca34d"
+    },
+    {
+      "path": "resources/shaders/rgds_splash.fs",
+      "source": "resources/shaders/splash.fs",
+      "payload": "payload/2dc1f0ceea1191c3c9e7ec89994734faa2e83a452a99e3019c4eb9c8e06035e3.bin",
+      "payload_sha256": "2dc1f0ceea1191c3c9e7ec89994734faa2e83a452a99e3019c4eb9c8e06035e3"
+    },
+    {
+      "path": "rgds_background.lua",
+      "payload": "payload/0687f6c84355732c14338a4220159e373c9f2754a5ae2520748afff084bd991c.bin",
+      "payload_sha256": "0687f6c84355732c14338a4220159e373c9f2754a5ae2520748afff084bd991c"
+    },
+    {
+      "path": "rgds_crash.lua",
+      "payload": "payload/393903136ee5005374a92fa3db9396c8d1ad6c2cbb3323e6f6c9bfc380acbfc5.bin",
+      "payload_sha256": "393903136ee5005374a92fa3db9396c8d1ad6c2cbb3323e6f6c9bfc380acbfc5"
+    },
+    {
+      "path": "rgds_dual.lua",
+      "payload": "payload/e2cfcb376181085e38389b3d5a5ad1c4a3b2a3a50c5b7dd99ff878e415fd1080.bin",
+      "payload_sha256": "e2cfcb376181085e38389b3d5a5ad1c4a3b2a3a50c5b7dd99ff878e415fd1080"
+    },
+    {
+      "path": "rgds_evdev.lua",
+      "payload": "payload/a7c5da0999563a8d368ba4baecce11c67d376a386a63bba3d28acf87f3d5753a.bin",
+      "payload_sha256": "a7c5da0999563a8d368ba4baecce11c67d376a386a63bba3d28acf87f3d5753a"
+    },
+    {
+      "path": "rgds_input.lua",
+      "payload": "payload/60bedb91ff0d6d5dfe1b1734dbaa57558370e5933ba69a7fd1a057f213c5772b.bin",
+      "payload_sha256": "60bedb91ff0d6d5dfe1b1734dbaa57558370e5933ba69a7fd1a057f213c5772b"
+    },
+    {
+      "path": "rgds_settings.lua",
+      "payload": "payload/34f6a60d3c3c2a71167274e8f41d968ed872fc507eae2acbb890f0bba773c7e3.bin",
+      "payload_sha256": "34f6a60d3c3c2a71167274e8f41d968ed872fc507eae2acbb890f0bba773c7e3"
+    }
+  ]
+}

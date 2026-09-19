@@ -1,0 +1,11 @@
+extern MY_HIGHP_OR_MEDIUMP vec2 rgds_offset;
+extern MY_HIGHP_OR_MEDIUMP number rgds_motion;
+extern MY_HIGHP_OR_MEDIUMP number rgds_detail;
+
+    MY_HIGHP_OR_MEDIUMP number uv_len = length(uv + rgds_offset);
+    uv += rgds_offset;
+    MY_HIGHP_OR_MEDIUMP number speed = time*rgds_motion*vort_speed;
+    speed = time*rgds_motion*(6.)*vort_speed + vort_offset + 1033.;
+    vec3 table_colour = colour_1.rgb*0.18 + colour_2.rgb*0.12 + BLACK.rgb*0.70;
+    ret_col.rgb = mix(table_colour, ret_col.rgb, rgds_detail);
+    mod_flash *= rgds_detail;

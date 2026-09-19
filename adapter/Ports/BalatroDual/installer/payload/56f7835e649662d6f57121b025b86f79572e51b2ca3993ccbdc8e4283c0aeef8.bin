@@ -1,0 +1,17 @@
+
+
+local upstream_conf = love.conf
+function love.conf(t)
+    upstream_conf(t)
+    t.window.title = "Balatro for RGDSplus"
+    t.identity = "balatro-dual"
+    t.window.width = 2048
+    t.window.height = 768
+    t.window.fullscreen = false
+    t.window.fullscreentype = "desktop"
+    t.window.display = tonumber(os.getenv("BALATRO_RGDS_DISPLAY")) or 1
+    t.window.borderless = true
+    t.window.resizable = false
+    t.window.highdpi = false
+    t.window.vsync = 1
+end

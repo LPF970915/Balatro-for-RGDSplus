@@ -1,0 +1,402 @@
+-- Experimental display adapter. One rules engine, two screen-local views.
+RGDS = {screen=2}
+local D = RGDS
+local background = require("rgds_background")
+D.draw_background = background.draw
+D.draw_flash = background.draw_flash
+local W, H = 1024, 768
+local root = assert(os.getenv("BALATRO_RGDS_ROOT"))
+local testing = false
+local profile = nil
+local input = require("rgds_input")
+local crash = require("rgds_crash")
+local actual_dimensions = love.graphics.getDimensions
+local set_mode, update_mode = love.window.setMode, love.window.updateMode
+local pending_capture
+local boot_captured=false
+local menu_ready_since
+local intro_capture = os.getenv("BALATRO_DUAL_CAPTURE_INTRO") == "1" and {index=1}
+local record_play, recorded = false, {}
+local last_stats = {}
+local release_pending, back_since
+local started = love.timer.getTime()
+local frame_count, next_report, last_report = 0, 0, started
+local last_state, sequence, next_command = nil, nil, 0
+
+io.stdout:setvbuf("no")
+io.stderr:setvbuf("no")
+local function log(...) print("[rgds-dual]", ...) end
+
+-- Game layout stays 4:3; only the final render target spans both outputs.
+function love.graphics.getDimensions() return W, H end
+function love.graphics.getWidth() return W end
+function love.graphics.getHeight() return H end
+local function flags(source)
+    local result = {}
+    for k,v in pairs(source or {}) do result[k] = v end
+    result.fullscreen, result.borderless = false, true
+    result.resizable, result.highdpi = false, false
+    result.display, result.vsync = 1, 1
+    return result
+end
+function love.window.setMode(_, _, options)
+    return set_mode(W*2, H, flags(options))
+end
+function love.window.updateMode(_, _, options)
+    return update_mode(W*2, H, flags(options))
+end
+
+function D.hidden(object, depth)
+    if not object or (depth or 0) > 16 then return false end
+    if G.booster_pack and G.STATE ~= G.STATES.SHOP then
+        if object == G.shop or object == G.shop_jokers or object == G.shop_vouchers or
+           object == G.shop_booster then return true end
+        local parent = object.area or object.parent or (object.role and object.role.major)
+        if parent and parent ~= object then return D.hidden(parent, (depth or 0)+1) end
+    end
+    return false
+end
+
+function D.screen_for(object, depth)
+    if not object or (depth or 0) > 12 then return 2 end
+    if object.rgds_screen then return object.rgds_screen end
+    if object == G.SPLASH_BACK then return 0 end
+    if object == G.HUD or object == G.HUD_blind or object == G.play or
+       object == G.title_top or object == G.SPLASH_LOGO or object == G.SPLASH_FRONT or
+       object == G.round_eval then return 1 end
+    if object == G.OVERLAY_MENU or object == G.OVERLAY_TUTORIAL or
+       object == G.CURSOR or object == G.screenwipe then return 2 end
+    if object.area then return D.screen_for(object.area, (depth or 0)+1) end
+    local parent = object.parent or (object.role and object.role.major) or
+        (object.alignment and object.alignment.major)
+    if parent and parent ~= object then return D.screen_for(parent, (depth or 0)+1) end
+    return 2
+end
+
+function D.draw_upper_overlay()
+    if not (G.OVERLAY_MENU and G.F_HIDE_BG and G.STAGE == G.STAGES.RUN) then return end
+    for _, object in ipairs(G.I.UIBOX) do
+        if not object.parent and D.screen_for(object) == 1 then
+            love.graphics.push("all")
+            D.route(object)
+            object:translate_container()
+            object:draw()
+            love.graphics.pop()
+        end
+    end
+end
+
+function D.version_badge()
+    local version = G.VERSION:gsub("%-FULL$", "")
+    -- Pin the badge font so the Chinese credit also works in other menu languages.
+    local language = G.LANGUAGES.zh_CN
+    local function row(text)
+        return {n=G.UIT.R, config={align="cr"}, nodes={
+            {n=G.UIT.T, config={text=text, scale=0.3, colour=G.C.UI.TEXT_LIGHT,
+                lang=language}},
+        }}
+    end
+    return {n=G.UIT.ROOT,
+        config={align="cr", padding=0.08, colour=G.C.UI.TRANSPARENT_DARK},
+        nodes={
+            row("Balatro "..version.." for RGDSplus"),
+            row("\231\167\187\230\164\141by Blood_roc"),
+        }}
+end
+
+function D.live_tutorial_highlights(tutorial)
+    local highlights = tutorial.highlights
+    if not highlights then return {} end
+    -- Tutorial steps outlive the shop they highlighted during its exit animation.
+    for index=#highlights,1,-1 do
+        local node = highlights[index]
+        local parent, removed = node, false
+        for _=1,32 do
+            if not parent then break end
+            if parent.REMOVED then removed=true; break end
+            parent = parent.parent
+        end
+        if removed then
+            log("tutorial-retired",node.ID,node.config and node.config.type or "-")
+            table.remove(highlights,index)
+        end
+    end
+    return highlights
+end
+
+function D.capture_loading(progress)
+    if not intro_capture or intro_capture.loading or progress ~= 0.7 then return end
+    intro_capture.loading = true
+    love.graphics.captureScreenshot(function(image)
+        local name = "loading-"..os.time()
+        local file = assert(io.open(root.."/logs/"..name..".png","wb"))
+        file:write(image:encode("png"):getString())
+        file:close()
+        log("capture",name,image:getDimensions())
+    end)
+end
+
+function D.finish_shop_tutorial()
+    local progress = G.SETTINGS.tutorial_progress
+    if G.STATE == G.STATES.SHOP and G.shop and G.OVERLAY_TUTORIAL and
+       progress and progress.section == "shop" then
+        -- Use the stock cleanup so deferred tutorial callbacks cannot use the old shop.
+        G.FUNCS.skip_tutorial_section()
+        log("tutorial-shop-complete","leaving-shop")
+    end
+end
+
+function D.route(object)
+    D.screen = D.screen_for(object)
+    if D.hidden(object) then
+        D.screen = 0
+        love.graphics.setScissor(0,0,0,0)
+    elseif (object == G.title_top or object.area == G.title_top and G.title_top) and
+       not (G.SPLASH_LOGO and G.SPLASH_LOGO.dissolve and G.SPLASH_LOGO.dissolve > 0) then
+        love.graphics.setScissor(0,0,0,0)
+    elseif D.screen == 0 then
+        love.graphics.setScissor()
+    else
+        local x = (D.screen-1)*W
+        love.graphics.setScissor(x, 0, W, H)
+        love.graphics.translate(x, 0)
+    end
+end
+
+function D.install()
+    local toggle_shop = G.FUNCS.toggle_shop
+    function G.FUNCS.toggle_shop(...)
+        D.finish_shop_tutorial()
+        return toggle_shop(...)
+    end
+    local card_init = Card.init
+    function Card:init(...)
+        card_init(self, ...)
+        -- Intro cards have no CardArea. Their particles inherit this route.
+        if G.STAGE == G.STAGES.MAIN_MENU and G.STATE == G.STATES.SPLASH then
+            self.rgds_screen = 1
+        end
+    end
+    local box_draw = UIBox.draw
+    function UIBox:draw(...)
+        if D.trace and (self == G.round_eval or self:get_UIE_by_ID("cash_out_button")) then
+            log("render-audit",self.ID,D.screen,self.FRAME.DRAW,G.FRAMES.DRAW,
+                love.graphics.getScissor())
+            log("render-transform",love.graphics.transformPoint(
+                self.VT.x*G.TILESIZE*G.TILESCALE,self.VT.y*G.TILESIZE*G.TILESCALE))
+        end
+        return box_draw(self,...)
+    end
+    local boot = boot_timer
+    function boot_timer(...)
+        log("boot", ...)
+        return boot(...)
+    end
+    local render_settings = Game.set_render_settings
+    function Game:set_render_settings(...)
+        self.SETTINGS.GRAPHICS.texture_scaling = 1
+        return render_settings(self, ...)
+    end
+    local resize = love.resize
+    function love.resize()
+        background.release()
+        resize(W, H)
+        if G.CANVAS then G.CANVAS:release() end
+        G.CANVAS = love.graphics.newCanvas(W*2, H, {readable=true})
+        G.CANVAS:setFilter("linear","linear")
+    end
+
+    input.install()
+    require("rgds_settings").install()
+    local pressed, released = love.gamepadpressed, love.gamepadreleased
+    function love.gamepadpressed(joystick,button)
+        if input.down or input.owner then input.cancel("gamepad-switch") end
+        input.source=nil
+        if button == "guide" then love.event.quit(); return end
+        if button == "back" then back_since=love.timer.getTime() end
+        return pressed(joystick,button)
+    end
+    function love.gamepadreleased(joystick,button)
+        if button == "back" then back_since=nil end
+        return released(joystick,button)
+    end
+    local add = add_to_drawhash
+    function add_to_drawhash(object)
+        if D.screen == 2 then add(object) end
+    end
+    local focusable = Controller.is_node_focusable
+    function Controller:is_node_focusable(node, ...)
+        if D.hidden(node) then return false end
+        if D.screen_for(node) == 1 then return false end
+        return focusable(self, node, ...)
+    end
+
+    local remove_card = CardArea.remove_card
+    function CardArea:remove_card(card, ...)
+        local result = remove_card(self, card, ...)
+        if result then
+            result.rgds_previous_area = self
+            result.rgds_flight = nil
+        end
+        return result
+    end
+    local emplace = CardArea.emplace
+    function CardArea:emplace(card, ...)
+        if self == G.play and card.rgds_previous_area == G.hand then
+            card.rgds_flight = {time=love.timer.getTime(),x=card.VT.x,y=card.VT.y}
+        end
+        return emplace(self, card, ...)
+    end
+    local card_draw = Card.draw
+    function Card:draw(...)
+        local flight = self.rgds_flight
+        if not flight then return card_draw(self, ...) end
+        local duration = (G.SETTINGS.reduced_motion and 0.28 or 0.42) /
+            math.sqrt(G.SETTINGS.GAMESPEED or 1)
+        local t = (love.timer.getTime()-flight.time)/duration
+        if t >= 1 or self.area ~= G.play then
+            self.rgds_flight = nil
+            if record_play and not recorded.score then
+                pending_capture, recorded.score = "07-score", true
+            end
+            return card_draw(self, ...)
+        end
+        local screen = t < 0.5 and 2 or 1
+        local p = t < 0.5 and t*2 or (t-0.5)*2
+        local y = screen == 2 and (flight.y*(1-p)-self.VT.h*p) or
+            (G.TILE_H*(1-p)+self.VT.y*p)
+        local x = flight.x*(1-t)+self.VT.x*t
+        local previous = D.screen
+        love.graphics.push("all")
+        love.graphics.origin()
+        love.graphics.setScissor((screen-1)*W,0,W,H)
+        love.graphics.translate((screen-1)*W,0)
+        self:translate_container()
+        local scale = G.TILESIZE*G.TILESCALE
+        love.graphics.translate((x-self.VT.x)*scale,(y-self.VT.y)*scale)
+        -- In-flight cards are visual only and cannot join the lower focus list.
+        D.screen = 1
+        local result = card_draw(self, ...)
+        love.graphics.pop()
+        D.screen = previous
+        if record_play and p > 0.2 and p < 0.8 and not recorded[screen] then
+            pending_capture = screen == 2 and "05-transfer-lower" or "06-transfer-upper"
+            recorded[screen] = true
+        end
+        return result
+    end
+
+    local load = love.load
+    function love.load(...)
+        load(...)
+        love.window.setPosition(0, 0, 1)
+        love.resize()
+        for _, joystick in ipairs(love.joystick.getJoysticks()) do
+            if joystick:getName() == "ANBERNIC-rk3568-keys" then
+                love.joystick.loadGamepadMappings(joystick:getGUID() ..
+                    ",ANBERNIC-rk3568-keys,a:b0,b:b1,x:b3,y:b2," ..
+                    "leftshoulder:b4,rightshoulder:b5,back:b6,start:b7,guide:b8," ..
+                    "lefttrigger:b10,righttrigger:b11,dpup:h0.1,dpdown:h0.4," ..
+                "dpleft:h0.8,dpright:h0.2,leftx:a1,lefty:a2,platform:Linux,")
+            end
+        end
+        if testing and os.getenv("BALATRO_DUAL_KEEP_TUTORIAL") ~= "1" then
+            G.SETTINGS.tutorial_complete = true
+            G.SETTINGS.tutorial_progress = G.SETTINGS.tutorial_progress or {}
+            G.SETTINGS.tutorial_progress.completed_parts = {small_blind=true,big_blind=true}
+            G.SETTINGS.language = "zh_CN"
+            G:set_language()
+        end
+        log("drawable", actual_dimensions())
+        log("save", love.filesystem.getSaveDirectory())
+        log("testing", testing)
+    end
+
+    local update = love.update
+    function love.update(dt)
+        if release_pending and love.timer.getTime() >= release_pending.time then
+            local pending = release_pending
+            release_pending = nil
+            if pending.joystick then
+                love.gamepadreleased(pending.joystick,pending.button)
+            else
+                input.pointer("up",pending.x-W,pending.y,"test")
+            end
+        end
+        if back_since and love.timer.getTime()-back_since >= 1.5 then love.event.quit() end
+        input.before_update()
+        update(dt)
+        if record_play and not recorded.full and G.play and
+           #G.play.cards == D.expected_play_count and #G.play.cards > 0 then
+            local settled = true
+            for _, card in ipairs(G.play.cards) do if card.rgds_flight then settled=false end end
+            if settled then
+                pending_capture, recorded.full = "07-score-full", true
+            end
+        end
+        local now = love.timer.getTime()
+        if last_state ~= G.STATE then
+            local name = tostring(G.STATE)
+            for key,value in pairs(G.STATES) do if value == G.STATE then name=key; break end end
+            log("state", name, "elapsed", now-started)
+            last_state = G.STATE
+        end
+        if now >= next_report then
+            local stats = last_stats
+            log("perf", "fps", frame_count/math.max(now-last_report,0.001),
+                "lua_mb", collectgarbage("count")/1024,
+                "texture_mb", (stats.texturememory or 0)/1048576, "drawcalls", stats.drawcalls)
+            log("input", "native-events", input.touch_events,
+                "contacts", #love.touch.getTouches(), "down", input.down,
+                "queued", #input.events, "focus", love.window.hasFocus(),
+                "backend", input.evdev and "evdev" or "native",
+                "evdev-events", input.evdev_events,
+                "raw-events", input.evdev and input.evdev.raw_events or 0)
+            frame_count, last_report, next_report = 0, now, now+10
+        end
+    end
+    local draw = love.draw
+    function love.draw()
+        draw()
+        D.trace = nil
+        last_stats = love.graphics.getStats()
+        frame_count = frame_count + 1
+        if not boot_captured then
+            local ready = G and G.STAGE == G.STAGES.MAIN_MENU and G.STATE == G.STATES.MENU
+                and G.MAIN_MENU_UI and not G.screenwipe
+            local now = love.timer.getTime()
+            menu_ready_since = ready and (menu_ready_since or now) or nil
+            if menu_ready_since and now-menu_ready_since > 5 then
+                pending_capture,boot_captured="startup-"..os.time(),true
+            end
+        end
+        if intro_capture and G.STATE == G.STATES.SPLASH then
+            local offsets = {1,3,6,10,11.5,12.5}
+            local offset = offsets[intro_capture.index]
+            if offset and G.TIMERS.REAL >= offset then
+                pending_capture = "intro-"..intro_capture.index.."-"..os.time()
+                intro_capture.index = intro_capture.index+1
+            end
+        end
+        if pending_capture then
+            local name = pending_capture
+            pending_capture = nil
+            love.graphics.captureScreenshot(function(image)
+                local file = assert(io.open(root .. "/logs/" .. name .. ".png", "wb"))
+                file:write(image:encode("png"):getString())
+                file:close()
+                log("capture", name, image:getDimensions())
+            end)
+        end
+    end
+    local err = love.errorhandler or love.errhand
+    local function handle(message)
+        local trace = debug.traceback(tostring(message),2)
+        log("ERROR", trace)
+        local saved, result = crash.write(trace,input)
+        log(saved and "error-report" or "error-report-failed",result)
+        return err(message)
+    end
+    love.errorhandler, love.errhand = handle, handle
+    if profile then profile.install() end
+end

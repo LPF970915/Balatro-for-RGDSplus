@@ -1,0 +1,38 @@
+-- Save a Lua failure before entering LOVE's interactive error screen.
+local C = {}
+
+function C.write(trace, input, prefix)
+    return pcall(function()
+        prefix = prefix or assert(os.getenv("BALATRO_RGDS_SESSION"))
+        local lines = {"[lua-error]", "date="..os.date("%Y-%m-%dT%H:%M:%S%z")}
+        local function field(name, getter)
+            local ok, value = pcall(getter)
+            lines[#lines+1] = name.."="..(ok and tostring(value) or "unavailable")
+        end
+        field("state",function() return G.STATE end)
+        field("stage",function() return G.STAGE end)
+        field("paused",function() return G.SETTINGS.paused end)
+        field("round",function() return G.GAME.round end)
+        field("ante",function() return G.GAME.round_resets.ante end)
+        field("focus",function() return love.window.hasFocus() end)
+        field("backend",function() return input.evdev and "evdev" or "native" end)
+        field("pointer_down",function() return input.down end)
+        field("queued_events",function() return #input.events end)
+        field("native_events",function() return input.touch_events end)
+        field("evdev_events",function() return input.evdev_events end)
+        field("raw_events",function() return input.evdev.raw_events end)
+        field("lua_mb",function() return collectgarbage("count")/1024 end)
+        lines[#lines+1] = "[traceback]\n"..tostring(trace).."\n"
+        local path = prefix..".lua-error.txt"
+        local file = assert(io.open(path,"a"))
+        local written, write_error = file:write(table.concat(lines,"\n").."\n")
+        local flushed, flush_error = file:flush()
+        local closed, close_error = file:close()
+        assert(written,write_error)
+        assert(flushed,flush_error)
+        assert(closed,close_error)
+        return path
+    end)
+end
+
+return C

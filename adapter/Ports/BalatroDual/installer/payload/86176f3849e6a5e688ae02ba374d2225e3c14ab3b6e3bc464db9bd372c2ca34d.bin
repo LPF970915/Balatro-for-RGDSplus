@@ -1,0 +1,11 @@
+extern MY_HIGHP_OR_MEDIUMP vec2 rgds_offset;
+extern MY_HIGHP_OR_MEDIUMP number rgds_motion;
+extern MY_HIGHP_OR_MEDIUMP number rgds_detail;
+
+    MY_HIGHP_OR_MEDIUMP number uv_len = length(uv + rgds_offset);
+    uv += rgds_offset;
+    MY_HIGHP_OR_MEDIUMP number speed = (spin_time*rgds_motion*SPIN_EASE*0.2) + 302.2;
+    speed = time*rgds_motion*(2.);
+    for(int i=0; i < 2; i++) {
+    vec3 table_colour = colour_1.rgb*0.25 + colour_2.rgb*0.20 + colour_3.rgb*0.55;
+    ret_col.rgb = mix(table_colour, ret_col.rgb, rgds_detail);

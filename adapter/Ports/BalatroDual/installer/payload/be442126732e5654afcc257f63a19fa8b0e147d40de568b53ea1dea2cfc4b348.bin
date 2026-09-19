@@ -1,0 +1,4 @@
+        if self.config.rotate then letter.r = (self.config.rotate == 2 and -1 or 1)*(0.2*(-#self.strings[self.focused_string].letters/2 - 0.5 + k)/(#self.strings[self.focused_string].letters)+ (G.SETTINGS.reduced_motion and 0 or 0.02*math.sin(2*G.TIMERS.REAL+k))) end
+        if self.config.quiver and not G.SETTINGS.reduced_motion then
+        if self.config.float then letter.offset.y = (G.SETTINGS.reduced_motion and 0 or math.sqrt(self.scale)*(2+(self.font.FONTSCALE/G.TILESIZE)*2000*math.sin(2.666*G.TIMERS.REAL+200*k))) + 60*(letter.scale-1) end
+        if self.config.bump then letter.offset.y = (G.SETTINGS.reduced_motion and 0 or self.bump_amount*math.sqrt(self.scale)*7*math.max(0, (5+self.bump_rate)*math.sin(self.bump_rate*G.TIMERS.REAL+200*k) - 3 - self.bump_rate)) end

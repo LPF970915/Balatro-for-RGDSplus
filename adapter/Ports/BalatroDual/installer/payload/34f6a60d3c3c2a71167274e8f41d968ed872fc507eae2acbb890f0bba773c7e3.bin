@@ -1,0 +1,43 @@
+local S = {}
+
+function S.install()
+    local option_cycle = create_option_cycle
+    function create_option_cycle(args)
+        -- Ports uses zero for disabled bloom; the stock UI is one-indexed.
+        if args.opt_callback == "change_crt_bloom" and args.current_option == 0 then
+            local copy = {}
+            for key,value in pairs(args) do copy[key]=value end
+            copy.current_option=1
+            return option_cycle(copy)
+        end
+        return option_cycle(args)
+    end
+
+    local settings_tab = G.UIDEF.settings_tab
+    function G.UIDEF.settings_tab(tab)
+        if tab ~= "Video" then return settings_tab(tab) end
+        G.SETTINGS.QUEUED_CHANGE = {}
+        local function row(label, value)
+            return {n=G.UIT.R,config={align="cm",padding=0.15},nodes={
+                {n=G.UIT.C,config={align="cm",minw=4},nodes={
+                    {n=G.UIT.T,config={text=label,scale=0.4,colour=G.C.UI.TEXT_LIGHT}}
+                }},
+                {n=G.UIT.C,config={align="cm",minw=5},nodes={
+                    {n=G.UIT.T,config={text=value,scale=0.4,colour=G.C.UI.TEXT_LIGHT}}
+                }}
+            }}
+        end
+        return {n=G.UIT.ROOT,config={align="cm",padding=0.15,colour=G.C.CLEAR},nodes={
+            row(localize("b_set_monitor"),"DSI-1 + DSI-2"),
+            row(localize("b_set_windowmode"),localize("ml_windowmode_opt")[3]),
+            row("DSI-1","1024 x 768"),
+            row("DSI-2","1024 x 768"),
+            {n=G.UIT.R,config={align="cm",padding=0.2},nodes={
+                {n=G.UIT.T,config={text=localize("ml_vsync_opt")[1],
+                    scale=0.4,colour=G.C.UI.TEXT_LIGHT}}
+            }}
+        }}
+    end
+end
+
+return S

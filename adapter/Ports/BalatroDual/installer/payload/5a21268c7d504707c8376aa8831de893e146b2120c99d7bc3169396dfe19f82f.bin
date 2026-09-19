@@ -1,0 +1,2 @@
+  local realw, realh = love.graphics.getDimensions()
+  RGDS.capture_loading(progress)

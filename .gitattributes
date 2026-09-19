@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.bin -text
+*.so -text
+*.so.* -text
+love.aarch64 -text
+adapter/** -text

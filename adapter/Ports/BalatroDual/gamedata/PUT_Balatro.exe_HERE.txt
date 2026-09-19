@@ -1,0 +1,3 @@
+Copy your purchased, unmodified Balatro.exe into this directory.
+Required game content: 1.0.1o-FULL.
+Do not extract or rename the EXE. Then launch Balatro for RGDSplus from Ports.

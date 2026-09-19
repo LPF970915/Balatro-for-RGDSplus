@@ -1,0 +1,183 @@
+-- Native touch has its own coordinates; pointer gestures use one owner.
+local I = {events={},down=false,source=nil,touch_id=nil,touch_events=0,evdev_events=0}
+local W,H = 1024,768
+local testing = false
+local raw_position, raw_set_position, raw_is_down
+local press, release, moved
+local scene
+local clock = function() return love.timer.getTime() end
+
+local function valid(x,y)
+    return type(x)=="number" and type(y)=="number" and x==x and y==y
+end
+local function inside(x,y) return x>=0 and x<W and y>=0 and y<H end
+local function trace(...)
+    if testing then print("[input]",...) end
+end
+local function enqueue(event)
+    local last = I.events[#I.events]
+    if event.kind=="move" and last and last.kind=="move" then
+        I.events[#I.events]=event
+    else I.events[#I.events+1]=event end
+    if #I.events>64 then I.cancel("queue-overflow") end
+end
+
+function I.cancel(reason)
+    if I.evdev then I.evdev:block() end
+    local c = G and G.CONTROLLER
+    if c then
+        local target = c.dragging.target
+        if target and target.states then
+            if not target.REMOVED and target.stop_drag then target:stop_drag() end
+            target.states.drag.is=false
+        end
+        c.dragging.target, c.dragging.prev_target=nil,nil
+        c.dragging.handled=true
+        c.L_cursor_queue=nil
+        c.is_cursor_down=false
+        for _, name in ipairs({"cursor_down","cursor_up","clicked","released_on"}) do
+            c[name].handled=true
+            c[name].target=nil
+        end
+    end
+    I.events={}
+    I.down, I.owner, I.touch_id=false,nil,nil
+    trace("cancel",reason)
+end
+
+function I.pointer(kind,x,y,source,button)
+    if not valid(x,y) then return end
+    source, button=source or "test",button or 1
+    if kind=="down" then
+        if I.owner or not inside(x,y) then return end
+        I.owner=source
+    elseif kind=="up" then
+        if I.owner~=source then return end
+        I.owner=nil
+        if not inside(x,y) then I.cancel("outside-release"); return end
+    end
+    enqueue({kind=kind,x=x,y=y,source=source,button=button})
+end
+
+function I.before_update()
+    local c=G and G.CONTROLLER
+    if not c then return end
+    if I.evdev and not I.evdev:poll(love.window.hasFocus()) then
+        I.evdev=nil
+        print("[input]","backend","native-fallback")
+    end
+    if I.touch_id and love.touch and love.touch.getTouches then
+        local found=false
+        for _,id in ipairs(love.touch.getTouches()) do
+            if id==I.touch_id then found=true; break end
+        end
+        if not found then I.cancel("touch-disappeared") end
+    end
+    -- Some backends retain a stale contact after device removal without an up
+    -- event. Bound a stationary touch rather than leave a card held forever.
+    if I.touch_id and clock()-(I.touch_time or clock())>15 then
+        I.cancel("touch-idle-timeout")
+    end
+    local current = {state=G.STATE,overlay=G.OVERLAY_MENU,paused=G.SETTINGS.paused}
+    if scene and (scene.state~=current.state or scene.overlay~=current.overlay or
+       scene.paused~=current.paused) and (I.down or I.owner or #I.events>0) then
+        I.cancel("scene-change")
+    end
+    scene=current
+    if c.dragging.target and c.dragging.target.REMOVED then I.cancel("removed-target") end
+    local event=table.remove(I.events,1)
+    if not event then return end
+    I.x,I.y,I.source=event.x,event.y,event.source
+    local touch=event.source=="touch" or event.source=="evdev"
+    c:set_HID_flags(touch and "touch" or "mouse")
+    if event.kind=="down" then
+        I.down=true
+        press(event.x,event.y,event.button,touch)
+    elseif event.kind=="up" then
+        I.down=false
+        release(event.x,event.y,event.button)
+    end
+end
+
+function I.install()
+    raw_position,raw_set_position,raw_is_down =
+        love.mouse.getPosition,love.mouse.setPosition,love.mouse.isDown
+    press,release,moved=love.mousepressed,love.mousereleased,love.mousemoved
+    I.evdev=require("rgds_evdev").open(function(kind,x,y)
+        I.evdev_events=I.evdev_events+1
+        I.pointer(kind,x,y,"evdev")
+    end,function(reason) I.cancel(reason) end)
+    function love.mouse.getPosition()
+        if I.source and I.x then return I.x,I.y end
+        local x,y=raw_position()
+        return x-W,y
+    end
+    function love.mouse.setPosition(x,y) return raw_set_position(x+W,y) end
+    function love.mouse.isDown(...)
+        if I.source then
+            for _,button in ipairs({...}) do if button==1 then return I.down end end
+            return false
+        end
+        return raw_is_down(...)
+    end
+    function love.mousepressed(x,y,button,istouch)
+        trace("mouse-down",x,y,button,istouch)
+        if istouch or I.touch_id or I.owner=="evdev" then return end
+        I.pointer("down",x-W,y,"mouse",button)
+    end
+    function love.mousemoved(x,y,dx,dy,istouch)
+        if istouch or I.touch_id or I.owner=="evdev" then return end
+        if I.owner=="mouse" then I.pointer("move",x-W,y,"mouse"); return end
+        I.source=nil
+        return moved(x-W,y,dx,dy,false)
+    end
+    function love.mousereleased(x,y,button,istouch)
+        if istouch or I.touch_id then return end
+        I.pointer("up",x-W,y,"mouse",button)
+    end
+    function love.touchpressed(id,x,y)
+        I.touch_events=I.touch_events+1
+        trace("touch-raw",tostring(id),x,y)
+        if I.evdev then return end
+        if I.touch_id or I.owner or not valid(x,y) then return end
+        -- Firmware maps the physical touchscreen to DSI-1 (left). Also accept
+        -- firmware that maps it to DSI-2, keeping the origin fixed per gesture.
+        I.touch_origin=x>=W and W or 0
+        if not inside(x-I.touch_origin,y) then return end
+        I.touch_id=id
+        I.touch_time=clock()
+        trace("touch-down",tostring(id),x,y,I.touch_origin)
+        I.pointer("down",x-I.touch_origin,y,"touch")
+    end
+    function love.touchmoved(id,x,y)
+        if I.evdev then return end
+        if id~=I.touch_id then return end
+        I.touch_events=I.touch_events+1
+        I.touch_time=clock()
+        I.pointer("move",x-I.touch_origin,y,"touch")
+    end
+    function love.touchreleased(id,x,y)
+        if I.evdev then return end
+        if id~=I.touch_id then return end
+        I.touch_events=I.touch_events+1
+        trace("touch-up",tostring(id),x,y)
+        I.pointer("up",x-I.touch_origin,y,"touch")
+        I.touch_id=nil
+    end
+    local focus,mousefocus=love.focus,love.mousefocus
+    function love.focus(focused)
+        if not focused then I.cancel("focus-lost") end
+        if focus then return focus(focused) end
+    end
+    function love.mousefocus(focused)
+        if not focused then I.cancel("pointer-left-window") end
+        if mousefocus then return mousefocus(focused) end
+    end
+    local quit=love.quit
+    function love.quit(...)
+        if I.evdev then I.evdev:close(); I.evdev=nil end
+        if quit then return quit(...) end
+    end
+end
+
+return I

@@ -3,6 +3,7 @@ from pathlib import Path
 import shutil
 import tempfile
 import unittest
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("release", ROOT / "tools/build_release.py")
@@ -20,7 +21,8 @@ class ReleaseTests(unittest.TestCase):
         for path in ("../game.lua", "/game.lua", "C:/game.lua", "a\\b.lua", "a//b.lua",
                      "Ports/game.love", "Ports/GAME.EXE", "Ports/game.zip",
                      "Ports/cache/main.lua", "Ports/saves/profile.jkr",
-                     "Ports/logs/latest.txt", "Ports/BalatroDual/gamedata/data.bin"):
+                     "Ports/logs/latest.txt", "Ports/BalatroDual/gamedata/data.bin",
+                     "README.md", "Ports/extra.txt", "Other/game.lua"):
             self.assertFalse(release.allowed_name(path), path)
         self.assertTrue(release.allowed_name(release.GAME_DATA_NOTICE))
 
@@ -46,6 +48,11 @@ class ReleaseTests(unittest.TestCase):
 
     def test_archive_is_reproducible(self):
         out = release.build()
+        self.assertEqual(out.name, "Balatro for RGDSplus.zip")
+        with zipfile.ZipFile(out) as archive:
+            self.assertEqual({n.split("/")[0] for n in archive.namelist()}, {"Ports"})
+            self.assertEqual({n.split("/")[1] for n in archive.namelist() if n != "Ports/"},
+                             {"BalatroDual", "Balatro for RGDSplus.sh"})
         before = out.read_bytes()
         release.build()
         self.assertEqual(before, out.read_bytes())

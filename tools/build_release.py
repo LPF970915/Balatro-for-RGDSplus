@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 APP = "Ports/BalatroDual/"
 ENTRY = "Ports/Balatro for RGDSplus.sh"
 GAME_DATA_NOTICE = APP + "gamedata/PUT_Balatro.exe_HERE.txt"
-EMPTY_DIRS = tuple(APP + p + "/" for p in ("saves", "logs", "cache"))
+EMPTY_DIRS = ("Ports/", APP) + tuple(APP + p + "/" for p in ("saves", "logs", "cache"))
 FORBIDDEN = {".exe", ".love", ".jkr", ".png", ".jpg", ".ogg", ".wav", ".ttf", ".otf",
              ".zip", ".7z", ".tar", ".gz", ".log"}
 SENSITIVE = (
@@ -30,7 +30,7 @@ def digest(data):
 
 def allowed_name(name):
     path = PurePosixPath(name)
-    return (bool(name) and not path.is_absolute() and
+    return (bool(name) and (name == ENTRY or name.startswith(APP)) and not path.is_absolute() and
             not any(p in ("", ".", "..") for p in name.split("/")) and
             not any(c in name for c in ("\\", ":")) and
             not any(ord(c) < 32 for c in name) and

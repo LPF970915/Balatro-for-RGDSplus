@@ -10,7 +10,7 @@ RGDSplus 双屏适配项目，移植维护：**Blood_roc**。
 ## 下载
 
 进入本仓库的 [Releases](https://github.com/LPF970915/Balatro-for-RGDSplus/releases)，下载
-`Balatro_for_RGDSplus_R4.4_Adapter_SD_Root.zip`。
+`Balatro for RGDSplus.zip`。
 
 这是适配测试版本，不是游戏，也不是 Windows 游戏安装程序。无需支付下载费用。
 GitHub 自动生成的 “Source code” ZIP 是仓库快照，不是直接解压到内存卡的安装包。
@@ -47,6 +47,9 @@ Linux/Wayland 固件环境**。不保证适用于其他机型或固件。
       saves/
       logs/
 ```
+
+压缩包根目录只有 `Ports/`，其中只有 `BalatroDual/` 和
+`Balatro for RGDSplus.sh`。说明与许可放在 `BalatroDual/` 内。
 
 不要解压 EXE，不要改名为 ZIP，不需要复制 DLL、Steam 账号文件或整个 Steam 目录。
 不要形成 `Ports/Ports/`。建议预留至少 500 MB 空间。

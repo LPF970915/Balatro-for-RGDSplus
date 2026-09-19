@@ -2,7 +2,7 @@
 
 **本 Release 仅含适配包，不包含游戏本体。请购买正版游戏并自行放入本体。**
 
-下载 `Balatro_for_RGDSplus_R4.4_Adapter_SD_Root.zip`，
+下载 `Balatro for RGDSplus.zip`，
 解压到内存卡根目录，将正版 Windows `Balatro.exe` 放入：
 
 ```text
@@ -12,6 +12,18 @@ Ports/BalatroDual/gamedata/Balatro.exe
 从 Ports 启动 **Balatro for RGDSplus**。首次启动离线组装，
 支持已验证的 `1.0.1o-FULL / 1.0.1o / PROD_PC_Console` 本体。
 升级请备份并保留 `saves`。不要下载 GitHub 自动生成的源码 ZIP 作为安装包。
+
+压缩包根目录仅有 `Ports/`；其中仅有 `BalatroDual/` 适配文件夹和
+`Balatro for RGDSplus.sh` 启动脚本。说明与许可保留在适配文件夹内。
+
+2026-09-19 包装修订：压缩包改名、删除外层说明文件；游戏补丁、安装器、
+运行时和存档位置均未改变。下载附件仅保留适配 ZIP。
+
+SHA-256：
+
+```text
+08c8f1ecd4266dedacc4ec857ef3a11b338948613bfd4f166f5d12d921c42ae7
+```
 
 ## 本版
 

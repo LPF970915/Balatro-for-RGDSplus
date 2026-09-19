@@ -1,13 +1,12 @@
 {
-  "release_file": "Balatro_for_RGDSplus_R4.4_Adapter_SD_Root.zip",
+  "release_file": "Balatro for RGDSplus.zip",
   "recipe_id": "295a775d7b96304cbf9ee74a35066eca909e320224e859cb597dd0e5cf9661da",
   "files": {
-    "Balatro_for_RGDSplus_INSTALL.zh-CN.md": "58fcd2036126bf877e293c971418140ae7595475002b2ac50b86153537742b13",
     "Ports/Balatro for RGDSplus.sh": "aef61ef0b7280f33bc1d74246c1a5b804c69b6002f23259c76a8f9cee1fde020",
-    "Ports/BalatroDual/CHECKSUMS.sha256": "06040628b2336897c724c482681d3b179d7bf543c037926b31a4cf2e2cc8cc6e",
+    "Ports/BalatroDual/CHECKSUMS.sha256": "78c4ea412c53fe0467401c41b1779a272bdaa88640b36a78a8744c476f25e771",
     "Ports/BalatroDual/LICENSE-PortMaster.txt": "9592421b21541ded44fba7fc5c63fb7786b1883cea08d132c26f1abac93b5535",
     "Ports/BalatroDual/LICENSE-Project.md": "d6db988b3cbaa89d69d8982735b103e6fabb7e36363ab1a0077a1d797cbe1163",
-    "Ports/BalatroDual/README.zh-CN.md": "58fcd2036126bf877e293c971418140ae7595475002b2ac50b86153537742b13",
+    "Ports/BalatroDual/README.zh-CN.md": "c15bb3ba9326e770554f3fd8527f1ce3efb792e27b85d38b30214dcb020db24e",
     "Ports/BalatroDual/THIRD_PARTY_NOTICES.md": "07cfa180b7be6ded7db00ab29e38f57eb621dac1c9c15ace56d14890f8b64108",
     "Ports/BalatroDual/TROUBLESHOOTING.zh-CN.md": "4443f8f2b31efe1a82fdfe770573c0bf61b1186d8c10e8840201053c231073d6",
     "Ports/BalatroDual/build-manifest.json": "e0c9cf7b63ccbd029e838320124bec4714433e4b62964e276c6798a6da297466",

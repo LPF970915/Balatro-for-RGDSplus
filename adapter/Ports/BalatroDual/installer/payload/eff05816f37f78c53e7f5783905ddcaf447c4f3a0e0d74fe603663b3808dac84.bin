@@ -1,0 +1,11 @@
+    MY_HIGHP_OR_MEDIUMP float intensity = 1.0*min(10.,amount);
+    MY_HIGHP_OR_MEDIUMP vec2 uv = (((texture_coords)*(image_details)) - texture_details.xy*texture_details.ba)/texture_details.ba - 0.5;
+    MY_HIGHP_OR_MEDIUMP vec2 floored_uv = (floor((uv*PIXEL_SIZE_FAC)))/PIXEL_SIZE_FAC;
+    MY_HIGHP_OR_MEDIUMP vec2 uv_scaled_centered = (floored_uv);
+    MY_HIGHP_OR_MEDIUMP vec2 flame_up_vec = vec2(0., mod(4.*time, 10000.) - 5000. + mod(1.781*id, 1000.) );
+    MY_HIGHP_OR_MEDIUMP float scale_fac = (7.5 + 3./(2. + 2.*intensity));
+    MY_HIGHP_OR_MEDIUMP vec2 sv = uv_scaled_centered*scale_fac + flame_up_vec;
+    MY_HIGHP_OR_MEDIUMP float speed = mod(20.781*id, 100.) + 1.*sin(time+id)*cos(time*0.151+id);
+	MY_HIGHP_OR_MEDIUMP vec2 sv2 = vec2(0.,0.);
+	MY_HIGHP_OR_MEDIUMP float smoke_res = max(0.,((length((sv - flame_up_vec)/scale_fac*5.)+ 0.1*(length(uv_scaled_centered) - 0.5))*(2./(2.+ intensity*0.2)))) ;
+    MY_HIGHP_OR_MEDIUMP vec4 ret_col = colour_1;

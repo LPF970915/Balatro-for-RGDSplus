@@ -60,6 +60,8 @@ end
 function D.screen_for(object, depth)
     if not object or (depth or 0) > 12 then return 2 end
     if object.rgds_screen then return object.rgds_screen end
+    -- Stock moves an opening booster into G.play; its animation belongs below.
+    if object.ability and object.ability.set == "Booster" then return 2 end
     if object == G.SPLASH_BACK then return 0 end
     if object == G.HUD or object == G.HUD_blind or object == G.play or
        object == G.title_top or object == G.SPLASH_LOGO or object == G.SPLASH_FRONT or
@@ -148,13 +150,7 @@ end
 
 function D.route(object)
     D.screen = D.screen_for(object)
-    if D.hidden(object) then
-        D.screen = 0
-        love.graphics.setScissor(0,0,0,0)
-    elseif (object == G.title_top or object.area == G.title_top and G.title_top) and
-       not (G.SPLASH_LOGO and G.SPLASH_LOGO.dissolve and G.SPLASH_LOGO.dissolve > 0) then
-        love.graphics.setScissor(0,0,0,0)
-    elseif D.screen == 0 then
+    if D.screen == 0 then
         love.graphics.setScissor()
     else
         local x = (D.screen-1)*W
@@ -208,6 +204,7 @@ function D.install()
 
     input.install()
     require("rgds_settings").install()
+    require("rgds_visual").install()
     local pressed, released = love.gamepadpressed, love.gamepadreleased
     function love.gamepadpressed(joystick,button)
         if input.down or input.owner then input.cancel("gamepad-switch") end
@@ -222,7 +219,7 @@ function D.install()
     end
     local add = add_to_drawhash
     function add_to_drawhash(object)
-        if D.screen == 2 then add(object) end
+        if D.screen == 2 and not D.hidden(object) then add(object) end
     end
     local focusable = Controller.is_node_focusable
     function Controller:is_node_focusable(node, ...)
@@ -242,13 +239,25 @@ function D.install()
     end
     local emplace = CardArea.emplace
     function CardArea:emplace(card, ...)
-        if self == G.play and card.rgds_previous_area == G.hand then
+        if self == G.play and card.rgds_previous_area == G.hand and
+           not (card.ability and card.ability.set == "Booster") then
             card.rgds_flight = {time=love.timer.getTime(),x=card.VT.x,y=card.VT.y}
         end
         return emplace(self, card, ...)
     end
     local card_draw = Card.draw
     function Card:draw(...)
+        if self.ability and self.ability.set == "Booster" and D.screen ~= 2 then
+            local previous = D.screen
+            love.graphics.push("all")
+            love.graphics.origin()
+            D.route(self)
+            self:translate_container()
+            local result = card_draw(self, ...)
+            love.graphics.pop()
+            D.screen = previous
+            return result
+        end
         local flight = self.rgds_flight
         if not flight then return card_draw(self, ...) end
         local duration = (G.SETTINGS.reduced_motion and 0.28 or 0.42) /

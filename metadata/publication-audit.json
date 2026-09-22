@@ -1,10 +1,10 @@
 {
-  "tested_adapter_sha256": "650a6a1c10edfac15295795392415050b808efdf5219e0f577263461371adfff",
-  "recipe_id": "295a775d7b96304cbf9ee74a35066eca909e320224e859cb597dd0e5cf9661da",
-  "game_files_reconstructed": 311,
-  "unchanged_files_from_user_game": 281,
-  "delta_targets": 13,
-  "compatibility_addon_targets": 17,
+  "tested_adapter_sha256": "8054ba7dd8e19a312b76dde91cd9b158d4edce5f01515dc8e34137bdefcd86ae",
+  "recipe_id": "d00c1500ed98a4acb072f6ed7ed37a84ca0a19698a2637107d16a2d0df3fcb88",
+  "game_files_reconstructed": 312,
+  "unchanged_files_from_user_game": 280,
+  "delta_targets": 14,
+  "compatibility_addon_targets": 18,
   "game_patches_and_runtime_unchanged": true,
   "excluded": [
     "game EXE",

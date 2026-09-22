@@ -1,16 +1,16 @@
 {
-  "build": "rgdsplus-r4.4-public-20260919",
+  "build": "rgdsplus-r4.5-public-20260922",
   "project": "Balatro for RGDSplus",
   "entrypoint": "Ports/Balatro for RGDSplus.sh",
-  "baseline_game_sha256": "4f1ff73cfb51ec36bc183eb0656569ee1eef0d97009328e4f0a67c14d0528068",
-  "recipe_id": "295a775d7b96304cbf9ee74a35066eca909e320224e859cb597dd0e5cf9661da",
+  "baseline_game_sha256": "54c641642dfbe1db8ab263c5fee0f33e9211e525a9ab295767a5a69e42f98559",
+  "recipe_id": "d00c1500ed98a4acb072f6ed7ed37a84ca0a19698a2637107d16a2d0df3fcb88",
   "game_version": "1.0.1o-FULL",
-  "game_files": 311,
+  "game_files": 312,
   "bundled_game": false,
   "input": "gamedata/Balatro.exe",
   "save_identity": "balatro-dual",
   "tests_enabled": false,
   "offline_install": true,
-  "acceptance": "R4.4 device installation and targeted gameplay checks passed; not full stability acceptance.",
+  "acceptance": "R4.5 device installation, visual regression, targeted Lua tests, and clean-exit checks passed; not full stability or complete touch acceptance.",
   "distribution": "Adapter only; user supplies a purchased supported game"
 }

@@ -965,7 +965,7 @@ end
 local original_update_shop = Game.update_shop
 function Game:update_shop(dt)
     local result = original_update_shop(self, dt)
-    if G.shop then
+    if G.shop and not G.shop.alignment.offset.py then
         local x, y = shop_pin()
         pin_run_overlay(G.shop, y, x)
         if shop_needs_relayout then

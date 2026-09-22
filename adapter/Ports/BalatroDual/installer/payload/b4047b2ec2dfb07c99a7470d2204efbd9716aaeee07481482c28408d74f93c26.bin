@@ -1,0 +1,98 @@
+-- Visual corrections shared by stock UI objects and the RGDSplus layout.
+local V = {}
+
+function V.hand_plate(area)
+    if area ~= G.hand then return end
+    local box = area.children and area.children.area_uibox
+    local plate = box and box.UIRoot and box.UIRoot.children[1]
+    if not (plate and plate.config and plate.config.colour) then return end
+    -- Keep the original count row; render the plate with room for the card fan.
+    plate.states.visible = false
+end
+
+function V.draw_hand_plate(area)
+    if area ~= G.hand or not area.states.visible or G.VIEWING_DECK or
+       not area.cards or #area.cards == 0 then return end
+    local t, scale = area.VT, G.TILESIZE * G.TILESCALE
+    love.graphics.push("all")
+    love.graphics.setShader()
+    love.graphics.setColor(0,0,0,0.22)
+    love.graphics.rectangle("fill", (t.x-0.12)*scale, (t.y-0.38)*scale,
+        (t.w+0.24)*scale, (t.h+0.56)*scale, 0.12*scale, 0.12*scale)
+    love.graphics.pop()
+end
+
+function V.fit_consumeable_buttons(card)
+    local box = card.children and card.children.use_button
+    if card.area ~= G.consumeables or not box or box.REMOVED then return end
+    -- Keep actions below their card, clear of the adjacent inventory and screen edge.
+    box:set_alignment({major=card, type="bm", offset={x=0,y=0.5}, bond="Strong"})
+    box:align_to_major()
+    local margin = 0.12
+    local dx = math.max(margin - box.T.x, 0) -
+        math.max(box.T.x + box.T.w - (G.TILE_W - margin), 0)
+    local dy = math.max(margin - box.T.y, 0) -
+        math.max(box.T.y + box.T.h - (G.TILE_H - margin), 0)
+    box.alignment.offset.x = box.alignment.offset.x + dx
+    box.alignment.offset.y = box.alignment.offset.y + dy
+    box:align_to_major()
+    box:hard_set_VT()
+end
+
+function V.fit_flame(e)
+    local sprite, panel = e.config.object, e.parent
+    if not sprite or not sprite.atlas or not panel then return end
+    -- Stock's 2.5-tile sprite protrudes beyond the shortened top HUD.
+    local width = panel.T.w / 0.8
+    local bottom = panel.VT.y + panel.VT.h
+    local height = math.min(width, math.max(0.2, bottom - 0.04))
+    sprite.T.w, sprite.T.h = width, height
+    sprite.VT.w, sprite.VT.h = width, height
+    sprite.scale_mag = math.min(sprite.scale.x / width, sprite.scale.y / height)
+    sprite:set_alignment({major=panel,type="bmi",offset={x=0,y=0},xy_bond="Weak"})
+end
+
+function V.install_score_jiggle()
+    local card_juice_up = Card.juice_up
+    function Card:juice_up(...)
+        local settings = G.SETTINGS
+        local restore_reduced_motion = settings and settings.reduced_motion and
+            (self.area == G.play or G.STATE == G.STATES.HAND_PLAYED)
+        if restore_reduced_motion then settings.reduced_motion = false end
+        local result = card_juice_up(self, ...)
+        if restore_reduced_motion then settings.reduced_motion = true end
+        return result
+    end
+end
+
+function V.install()
+    V.install_score_jiggle()
+    local area_draw = CardArea.draw
+    function CardArea:draw(...)
+        V.hand_plate(self)
+        V.draw_hand_plate(self)
+        local result = area_draw(self, ...)
+        V.hand_plate(self)
+        return result
+    end
+    local highlight = Card.highlight
+    function Card:highlight(...)
+        local result = highlight(self, ...)
+        V.fit_consumeable_buttons(self)
+        return result
+    end
+    local card_move = Card.move
+    function Card:move(...)
+        local result = card_move(self, ...)
+        V.fit_consumeable_buttons(self)
+        return result
+    end
+    local flame_handler = G.FUNCS.flame_handler
+    function G.FUNCS.flame_handler(e)
+        local result = flame_handler(e)
+        V.fit_flame(e)
+        return result
+    end
+end
+
+return V

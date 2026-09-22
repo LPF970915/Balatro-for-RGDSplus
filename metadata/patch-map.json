@@ -1,5 +1,5 @@
 {
-  "recipe_id": "295a775d7b96304cbf9ee74a35066eca909e320224e859cb597dd0e5cf9661da",
+  "recipe_id": "d00c1500ed98a4acb072f6ed7ed37a84ca0a19698a2637107d16a2d0df3fcb88",
   "files": [
     {
       "path": "cardarea.lua",
@@ -28,8 +28,8 @@
     {
       "path": "game.lua",
       "source": "game.lua",
-      "payload": "payload/f7e876cde89304a07853b84d8baa9e3a505241ab9e27b67e42171fb13dbb7e59.bin",
-      "payload_sha256": "f7e876cde89304a07853b84d8baa9e3a505241ab9e27b67e42171fb13dbb7e59"
+      "payload": "payload/ca3198c8b1ca4667d03d2c121779e903cb45362bebb29935b4fc3b652b204b36.bin",
+      "payload_sha256": "ca3198c8b1ca4667d03d2c121779e903cb45362bebb29935b4fc3b652b204b36"
     },
     {
       "path": "globals.lua",
@@ -66,8 +66,8 @@
     },
     {
       "path": "portmaster/dual_layout.lua",
-      "payload": "payload/6b35937b35ac9a8e59992b53d9cf6afe131b0ab723120f90fc39841e8d8bd44d.bin",
-      "payload_sha256": "6b35937b35ac9a8e59992b53d9cf6afe131b0ab723120f90fc39841e8d8bd44d"
+      "payload": "payload/8226ff8500049828f597ba66b09d1b9dfd177260cd54a1d44285c92fb60361a6.bin",
+      "payload_sha256": "8226ff8500049828f597ba66b09d1b9dfd177260cd54a1d44285c92fb60361a6"
     },
     {
       "path": "portmaster/loc_fix.lua",
@@ -107,14 +107,20 @@
     {
       "path": "resources/shaders/CRT.fs",
       "source": "resources/shaders/CRT.fs",
-      "payload": "payload/0181769adf2670505610587183791baeeafb68667e4e34a2e8d0c31034f603bd.bin",
-      "payload_sha256": "0181769adf2670505610587183791baeeafb68667e4e34a2e8d0c31034f603bd"
+      "payload": "payload/c4c5e7e0caa9d6f874896491dd07c2e4cea0ba612ff898e76457de824d4678cf.bin",
+      "payload_sha256": "c4c5e7e0caa9d6f874896491dd07c2e4cea0ba612ff898e76457de824d4678cf"
     },
     {
       "path": "resources/shaders/background.fs",
       "source": "resources/shaders/background.fs",
       "payload": "payload/eb0ad34f53fccabcdf63af79b7ad681e8f1895dd4383b4411e5f7cc24a0dafe1.bin",
       "payload_sha256": "eb0ad34f53fccabcdf63af79b7ad681e8f1895dd4383b4411e5f7cc24a0dafe1"
+    },
+    {
+      "path": "resources/shaders/flame.fs",
+      "source": "resources/shaders/flame.fs",
+      "payload": "payload/eff05816f37f78c53e7f5783905ddcaf447c4f3a0e0d74fe603663b3808dac84.bin",
+      "payload_sha256": "eff05816f37f78c53e7f5783905ddcaf447c4f3a0e0d74fe603663b3808dac84"
     },
     {
       "path": "resources/shaders/flash.fs",
@@ -146,8 +152,8 @@
     },
     {
       "path": "rgds_dual.lua",
-      "payload": "payload/e2cfcb376181085e38389b3d5a5ad1c4a3b2a3a50c5b7dd99ff878e415fd1080.bin",
-      "payload_sha256": "e2cfcb376181085e38389b3d5a5ad1c4a3b2a3a50c5b7dd99ff878e415fd1080"
+      "payload": "payload/163002531b7d4a06252b110bbf809304645e50488b71b60835918acf882f45f8.bin",
+      "payload_sha256": "163002531b7d4a06252b110bbf809304645e50488b71b60835918acf882f45f8"
     },
     {
       "path": "rgds_evdev.lua",
@@ -163,6 +169,11 @@
       "path": "rgds_settings.lua",
       "payload": "payload/34f6a60d3c3c2a71167274e8f41d968ed872fc507eae2acbb890f0bba773c7e3.bin",
       "payload_sha256": "34f6a60d3c3c2a71167274e8f41d968ed872fc507eae2acbb890f0bba773c7e3"
+    },
+    {
+      "path": "rgds_visual.lua",
+      "payload": "payload/b4047b2ec2dfb07c99a7470d2204efbd9716aaeee07481482c28408d74f93c26.bin",
+      "payload_sha256": "b4047b2ec2dfb07c99a7470d2204efbd9716aaeee07481482c28408d74f93c26"
     }
   ]
 }
